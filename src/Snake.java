@@ -1,12 +1,9 @@
 /*Possible Changes:
  * read constants from text file
- * add custom snake length increase
  * speed up each time food is eaten
- * sets up paused; press arrows to start
  * white --> field and black --> snake
- * scoreboard (highscore?)
+ * highscore?
  * Win/Lose dialog followed by retry (might be easiest to implement in main and instantiate new snake)
- * GIT SOME MOAR
  */
 
 import javax.swing.*;
@@ -20,20 +17,23 @@ public class Snake extends JPanel {
         UP, DOWN, LEFT, RIGHT
     }
 
-    public static final int HEIGHT = 8, WIDTH = 16;
-    public static final int DELAY = 500;
-    public static final int INIT_LENGTH = 5;
-    public static final int FOOD_COUNT = 50;
+    public static final int HEIGHT = 32, WIDTH = 32;
+    public static final int DELAY = 100;
+    public static final int INIT_LENGTH = 5, ADD_LENGTH = 3;
+    public static final int FOOD_COUNT = 1;
     public static final Direction START_DIRECTION = Direction.RIGHT;
 
     private ImageIcon white, black, food;
     private JPanel base;
     private JLabel[][] field;
+    private JLabel scoreBoard;
 
-    LinkedList<int[]> snake;
+    private LinkedList<int[]> snake;
     private Direction dir, lastDir;
-    Timer timer;
-    Random rng;
+    private Timer timer;
+    private Random rng;
+    private int score, removeWait;
+    private boolean finished;
 
     public static void main(String args[]) {
         System.setProperty("java.util.Arrays.useLegacyMergeSort", "true");
@@ -63,19 +63,25 @@ public class Snake extends JPanel {
             for (int j = 0; j < WIDTH; j++) {
                 base.add(field[i][j] = new JLabel(white));
             }
-        add(base, BorderLayout.CENTER);
         snake = new LinkedList<int[]>();
         for (int i = 0; i < INIT_LENGTH; i++) {
-            add(new int[] { HEIGHT/2-INIT_LENGTH/2, WIDTH/2 + i });
+            add(new int[] { HEIGHT/2, WIDTH/2-INIT_LENGTH/2 + i });
         }
+        
+        scoreBoard = new JLabel();
+        scoreBoard.setText("Press any key to start!");
+
+        add(scoreBoard, BorderLayout.NORTH);
+        add(base, BorderLayout.CENTER);
         
         rng = new Random();
         for(int i = 0; i < FOOD_COUNT; i++)
-        	addFood(0);
+        	addFood(true);
         lastDir = dir = START_DIRECTION;
+        removeWait = score = 0;
+        finished = false;
         
         timer = new Timer(DELAY, taskPerformer);
-        timer.start();
     }
 
     private void add(int[] pos) {
@@ -88,9 +94,12 @@ public class Snake extends JPanel {
         field[tail[0]][tail[1]].setIcon(white);
     }
     
-    private void addFood(int n)
+    private void addFood() { addFood(false); }
+    private void addFood(boolean initial)
     {
-    	int whiteCount = HEIGHT*WIDTH-snake.size()-FOOD_COUNT+n;
+    	if(!initial)
+    		scoreBoard.setText("Score: " + ++score);
+    	int whiteCount = HEIGHT*WIDTH-snake.size()-FOOD_COUNT+(initial?0:1);
     	if (whiteCount <= 0)
     		return;
     	int foodIndex = rng.nextInt(whiteCount) + 1;
@@ -128,16 +137,24 @@ public class Snake extends JPanel {
             lastDir = dir;
             head[0] = (head[0]+HEIGHT) % HEIGHT;
             head[1] = (head[1]+WIDTH) % WIDTH;
-            if(isFood(head)) {
+            if(isFood(head)) { // add(snake.getLast()[0], snake.getLast()[1]);
             	add(head);
-            	addFood(1); // add(snake.getLast()[0], snake.getLast()[1]);
+            	addFood();
+            	removeWait += ADD_LENGTH;
         	} else if(isSnake(head)) {
             	timer.stop();
+            	finished = true;
+            	System.out.println("Done");
             	// if(snake.size() == HEIGHT*WIDTH) You Win!
         	} else {
             	add(head);
-            	remove();
         	}
+            
+            if(!finished)
+	            if(removeWait > 0)
+	            	removeWait--;
+	            else
+	            	remove();
         }
     };
     
@@ -164,6 +181,10 @@ public class Snake extends JPanel {
             case KeyEvent.VK_D:
                 dir = lastDir!=Direction.LEFT?Direction.RIGHT:dir;
                 break;
+            }
+            if(!timer.isRunning() && !finished) {
+                timer.start();
+                scoreBoard.setText("Score: " + score);
             }
         }
         public void keyTyped (KeyEvent e) {}
