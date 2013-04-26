@@ -23,15 +23,15 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.Timer;
 
-public class Snake extends JPanel {
+public class Snake extends JFrame {
 	public enum Direction {
 		UP, DOWN, LEFT, RIGHT
 	}
 
-	public static int HEIGHT = 32, WIDTH = 32;
-	public static int DELAY = 100;
-	public static int INIT_LENGTH = 6, ADD_LENGTH = 3;
-	public static int FOOD_COUNT = 1;
+	private int height = 32, width = 32;
+	private int delay = 100;
+	private int initLength = 5, addLength = 1;
+	private int foodCount = 1;
 
 	private ImageIcon fieldIcon, snakeIcon, foodIcon;
 	private JPanel base;
@@ -48,28 +48,26 @@ public class Snake extends JPanel {
 	public static void main(String args[]) {
 		System.setProperty("java.util.Arrays.useLegacyMergeSort", "true");
 
-		JFrame frame = new JFrame("Snake - Eat to Win");
-		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-
-		Snake snake = new Snake();
-		frame.getContentPane().add(snake);
-
-		frame.pack();
-		frame.setVisible(true);
+		JFrame snake = new Snake("Snake - Eat to Win");
+		snake.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		snake.pack();
+		snake.setVisible(true);
 	}
 
-	public Snake() {
+	public Snake(String s) {
+		super(s);
 		try {
 			Scanner scan = new Scanner(new File("settings.txt"));
-			HEIGHT = Integer.parseInt(scan.nextLine().trim());
-			WIDTH = Integer.parseInt(scan.nextLine().trim());
-			DELAY = Integer.parseInt(scan.nextLine().trim());
-			INIT_LENGTH = Integer.parseInt(scan.nextLine().trim());
-			ADD_LENGTH = Integer.parseInt(scan.nextLine().trim());
-			FOOD_COUNT = Integer.parseInt(scan.nextLine().trim());
+			height = Integer.parseInt(scan.nextLine().trim());
+			width = Integer.parseInt(scan.nextLine().trim());
+			delay = Integer.parseInt(scan.nextLine().trim());
+			initLength = Integer.parseInt(scan.nextLine().trim());
+			addLength = Integer.parseInt(scan.nextLine().trim());
+			foodCount = Integer.parseInt(scan.nextLine().trim());
 			scan.close();
 		} catch (Exception e) {
-			e.printStackTrace();
+			System.out.println("Problem with the file settings.txt");
+			System.out.println("Make sure it contains:\nGrid Height\nGrid Width\nGame Delay\nInital Snake Length\nAdded Snake Length\nFood Count");
 		}
 
 		setLayout(new BorderLayout());
@@ -80,15 +78,15 @@ public class Snake extends JPanel {
 		snakeIcon = new ImageIcon("snake.gif");
 		foodIcon = new ImageIcon("food.gif");
 
-		base = new JPanel(new GridLayout(HEIGHT, WIDTH));
-		field = new JLabel[HEIGHT][WIDTH];
-		for (int i = 0; i < HEIGHT; i++)
-			for (int j = 0; j < WIDTH; j++)
+		base = new JPanel(new GridLayout(height, width));
+		field = new JLabel[height][width];
+		for (int i = 0; i < height; i++)
+			for (int j = 0; j < width; j++)
 				base.add(field[i][j] = new JLabel(fieldIcon));
 
 		snake = new LinkedList<int[]>();
-		for (int i = 0; i < INIT_LENGTH; i++) {
-			add(new int[] { HEIGHT / 2, WIDTH / 2 - INIT_LENGTH / 2 + i });
+		for (int i = 0; i < initLength; i++) {
+			add(new int[] { height / 2, width / 2 - initLength / 2 + i });
 		}
 
 		scoreBoard = new JLabel();
@@ -98,13 +96,13 @@ public class Snake extends JPanel {
 		add(base, BorderLayout.CENTER);
 
 		rng = new Random();
-		for (int i = 0; i < FOOD_COUNT; i++)
+		for (int i = 0; i < foodCount; i++)
 			addFood(i);
 		lastDir = dir = Direction.RIGHT;
 		removeWait = score = 0;
 		finished = false;
 
-		timer = new Timer(DELAY, taskPerformer);
+		timer = new Timer(delay, taskPerformer);
 	}
 
 	private void add(int[] pos) {
@@ -122,13 +120,13 @@ public class Snake extends JPanel {
 	}
 
 	private void addFood() {
-		addFood(FOOD_COUNT);
+		addFood(foodCount);
 	}
 
 	private void addFood(int food) {
-		if (food == FOOD_COUNT)
+		if (food == foodCount)
 			scoreBoard.setText("Score: " + ++score);
-		int whiteCount = HEIGHT * WIDTH - snake.size() - food;
+		int whiteCount = height * width - snake.size() - food;
 		if (whiteCount <= 0)
 			return;
 		int foodIndex = rng.nextInt(whiteCount) + 1;
@@ -169,8 +167,8 @@ public class Snake extends JPanel {
 				break;
 			}
 			lastDir = dir;
-			head[0] = (head[0] + HEIGHT) % HEIGHT;
-			head[1] = (head[1] + WIDTH) % WIDTH;
+			head[0] = (head[0] + height) % height;
+			head[1] = (head[1] + width) % width;
 			
 			if (isSnake(head)) {
 				timer.stop();
@@ -178,7 +176,7 @@ public class Snake extends JPanel {
 				// if(snake.size() == HEIGHT*WIDTH) You Win!
 			}else {
 				if (isFood(head)) { // add(snake.getLast()[0], snake.getLast()[1]);
-					removeWait += ADD_LENGTH;
+					removeWait += addLength;
 					addFood();
 				}
 				remove();
