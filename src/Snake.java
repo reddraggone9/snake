@@ -1,5 +1,5 @@
 /*Possible Changes:
- * Win/Lose dialog followed by retry (might be easiest to implement in main and instantiate new snake)
+ * add controls menu
  * speed up each time food is eaten
  * add highscore
  */
@@ -11,7 +11,6 @@ import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.io.File;
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.Random;
@@ -20,6 +19,7 @@ import java.util.Scanner;
 import javax.swing.ImageIcon;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.Timer;
 
@@ -29,10 +29,16 @@ public class Snake extends JFrame {
 	}
 
 	private int height = 32, width = 32;
-	private int delay = 100;
-	private int initLength = 5, addLength = 1;
+	private int delay = 100, delayDecay = 1;
+	private int initLength = 5, addLength = 3;
 	private int foodCount = 1;
 
+	private final static String START_PROMPT = "Press any key to start!";
+	private final static String SETTINGS_ERROR = "Problem with the file settings.txt\nMake sure it contains:\nGrid Height\nGrid Width\nGame Delay\nInital Snake Length\nAdded Snake Length\nFood Count";
+	private final static String SCORE_PREFIX = "Score: ";
+	private final static String PLAY_AGAIN = "Would you like to play again?";
+	private final static String WIN_MESSAGE = "You Won Snake!\nNow go outside and live a little.";
+	
 	private ImageIcon fieldIcon, snakeIcon, foodIcon;
 	private JPanel base;
 	private JLabel[][] field;
@@ -50,12 +56,33 @@ public class Snake extends JFrame {
 
 		JFrame snake = new Snake("Snake - Eat to Win");
 		snake.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		snake.pack();
 		snake.setVisible(true);
 	}
 
 	public Snake(String s) {
 		super(s);
+		setLayout(new BorderLayout());
+		addKeyListener(new DirectionListener());
+		setFocusable(true);
+
+		fieldIcon = new ImageIcon("field.gif");
+		snakeIcon = new ImageIcon("snake.gif");
+		foodIcon = new ImageIcon("food.gif");
+		rng = new Random();
+		scoreBoard = new JLabel();
+		add(scoreBoard, BorderLayout.NORTH);
+		timer = new Timer(delay, gameLoop);
+
+		setup();
+	}
+
+	private void setup() {
+		readSettings();
+		initGUI();
+		initSnake();
+	}
+
+	private void readSettings() {
 		try {
 			Scanner scan = new Scanner(new File("settings.txt"));
 			height = Integer.parseInt(scan.nextLine().trim());
@@ -66,43 +93,32 @@ public class Snake extends JFrame {
 			foodCount = Integer.parseInt(scan.nextLine().trim());
 			scan.close();
 		} catch (Exception e) {
-			System.out.println("Problem with the file settings.txt");
-			System.out.println("Make sure it contains:\nGrid Height\nGrid Width\nGame Delay\nInital Snake Length\nAdded Snake Length\nFood Count");
+			System.out.println(SETTINGS_ERROR);
 		}
+	}
 
-		setLayout(new BorderLayout());
-		addKeyListener(new DirectionListener());
-		setFocusable(true);
-
-		fieldIcon = new ImageIcon("field.gif");
-		snakeIcon = new ImageIcon("snake.gif");
-		foodIcon = new ImageIcon("food.gif");
-
+	private void initGUI() {
 		base = new JPanel(new GridLayout(height, width));
 		field = new JLabel[height][width];
 		for (int i = 0; i < height; i++)
 			for (int j = 0; j < width; j++)
 				base.add(field[i][j] = new JLabel(fieldIcon));
+		scoreBoard.setText(START_PROMPT);
+		add(base, BorderLayout.CENTER);
+		pack();
+	}
 
+	private void initSnake() {
 		snake = new LinkedList<int[]>();
 		for (int i = 0; i < initLength; i++) {
 			add(new int[] { height / 2, width / 2 - initLength / 2 + i });
 		}
-
-		scoreBoard = new JLabel();
-		scoreBoard.setText("Press any key to start!");
-
-		add(scoreBoard, BorderLayout.NORTH);
-		add(base, BorderLayout.CENTER);
-
-		rng = new Random();
 		for (int i = 0; i < foodCount; i++)
 			addFood(i);
 		lastDir = dir = Direction.RIGHT;
 		removeWait = score = 0;
 		finished = false;
-
-		timer = new Timer(delay, taskPerformer);
+		timer.setDelay(delay);
 	}
 
 	private void add(int[] pos) {
@@ -145,11 +161,13 @@ public class Snake extends JFrame {
 		return field[pos[0]][pos[1]].getIcon() == foodIcon;
 	}
 
-	public boolean isSnake(int[] pos) { //Straightforward unless it's the tail and it will be removed
-		return (!(pos[0] == snake.getFirst()[0] && pos[1] == snake.getFirst()[1]) || removeWait > 0) && field[pos[0]][pos[1]].getIcon() == snakeIcon;
+	public boolean isSnake(int[] pos) { // Straightforward unless it's the tail
+										// and it will be removed
+		return (!(pos[0] == snake.getFirst()[0] && pos[1] == snake.getFirst()[1]) || removeWait > 0)
+				&& field[pos[0]][pos[1]].getIcon() == snakeIcon;
 	}
 
-	ActionListener taskPerformer = new ActionListener() {
+	ActionListener gameLoop = new ActionListener() {
 		public void actionPerformed(ActionEvent e) {
 			int[] head = Arrays.copyOf(snake.getLast(), 2);
 			switch (dir) {
@@ -169,13 +187,23 @@ public class Snake extends JFrame {
 			lastDir = dir;
 			head[0] = (head[0] + height) % height;
 			head[1] = (head[1] + width) % width;
-			
+
 			if (isSnake(head)) {
 				timer.stop();
 				finished = true;
-				// if(snake.size() == HEIGHT*WIDTH) You Win!
-			}else {
-				if (isFood(head)) { // add(snake.getLast()[0], snake.getLast()[1]);
+				if (snake.size() == height * width)
+					if(JOptionPane.showConfirmDialog(Snake.this, WIN_MESSAGE, "Game Over", JOptionPane.OK_CANCEL_OPTION) == JOptionPane.OK_OPTION)
+						System.exit(0);
+				switch (JOptionPane.showConfirmDialog(Snake.this, PLAY_AGAIN)) {
+				case JOptionPane.YES_OPTION:
+					setup();
+					break;
+				case JOptionPane.NO_OPTION:
+					System.exit(0);
+					break;
+				}
+			} else {
+				if (isFood(head)) {
 					removeWait += addLength;
 					addFood();
 				}
@@ -187,31 +215,45 @@ public class Snake extends JFrame {
 
 	private class DirectionListener implements KeyListener {
 		public void keyPressed(KeyEvent e) {
+			boolean skip = false;
 			switch (e.getKeyCode()) {
 			case KeyEvent.VK_UP:
 			case KeyEvent.VK_NUMPAD8:
 			case KeyEvent.VK_W:
-				dir = lastDir != Direction.DOWN ? Direction.UP : dir;
+				if (lastDir != Direction.DOWN)
+					dir = Direction.UP;
 				break;
 			case KeyEvent.VK_DOWN:
 			case KeyEvent.VK_NUMPAD2:
 			case KeyEvent.VK_S:
-				dir = lastDir != Direction.UP ? Direction.DOWN : dir;
+				if (lastDir != Direction.UP)
+					dir = Direction.DOWN;
 				break;
 			case KeyEvent.VK_LEFT:
 			case KeyEvent.VK_NUMPAD4:
 			case KeyEvent.VK_A:
-				dir = lastDir != Direction.RIGHT ? Direction.LEFT : dir;
+				if (lastDir != Direction.RIGHT)
+					dir = Direction.LEFT;
 				break;
 			case KeyEvent.VK_RIGHT:
 			case KeyEvent.VK_NUMPAD6:
 			case KeyEvent.VK_D:
-				dir = lastDir != Direction.LEFT ? Direction.RIGHT : dir;
+				if (lastDir != Direction.LEFT)
+					dir = Direction.RIGHT;
+				break;
+			case KeyEvent.VK_R:
+				setup();
+			case KeyEvent.VK_P:
+				timer.stop();
+				skip = true;
+				break;
+			case KeyEvent.VK_ESCAPE:
+				System.exit(0);
 				break;
 			}
-			if (!(timer.isRunning() || finished)) {
+			if (!(timer.isRunning() || finished || skip)) {
 				timer.start();
-				scoreBoard.setText("Score: " + score);
+				scoreBoard.setText(SCORE_PREFIX + score);
 			}
 		}
 
