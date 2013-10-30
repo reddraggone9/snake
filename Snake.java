@@ -10,6 +10,9 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.awt.Color;
+import java.awt.Graphics2D;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -28,10 +31,10 @@ public class Snake extends JFrame {
 		UP, DOWN, LEFT, RIGHT
 	}
 
-	private int height = 32, width = 32;
-	private int delay = 100, delayDecay = 1;
-	private int initLength = 5, addLength = 3;
-	private int foodCount = 1;
+	private int height = 32, width = 32,
+	            delay = 100, delayDecay = 1,
+	            initLength = 5, addLength = 3,
+	            foodCount = 1, iconSize = 8;
 
 	private final static String START_PROMPT = "Press any key to start!";
 	private final static String SETTINGS_ERROR = "Problem with the file settings.txt\nMake sure it contains:\nGrid Height\nGrid Width\nGame Delay\nInital Snake Length\nAdded Snake Length\nFood Count";
@@ -65,9 +68,25 @@ public class Snake extends JFrame {
 		addKeyListener(new DirectionListener());
 		setFocusable(true);
 
-		fieldIcon = new ImageIcon("field.gif");
-		snakeIcon = new ImageIcon("snake.gif");
-		foodIcon = new ImageIcon("food.gif");
+		// fieldIcon = new ImageIcon("field.gif");
+        BufferedImage img = new BufferedImage(iconSize, iconSize, BufferedImage.TYPE_INT_RGB);
+        Graphics2D g = img.createGraphics();
+        g.setPaint(Color.WHITE);
+        g.fillRect(0,0,iconSize,iconSize);
+		fieldIcon = new ImageIcon(img);
+
+        img = new BufferedImage(iconSize, iconSize, BufferedImage.TYPE_INT_RGB);
+        g = img.createGraphics();
+        g.setPaint(Color.BLACK);
+        g.fillRect(0,0,iconSize,iconSize);
+		snakeIcon = new ImageIcon(img);
+
+        img = new BufferedImage(iconSize, iconSize, BufferedImage.TYPE_INT_RGB);
+        g = img.createGraphics();
+        g.setPaint(Color.RED);
+        g.fillRect(0,0,iconSize,iconSize);
+		foodIcon = new ImageIcon(img);
+
 		rng = new Random();
 		scoreBoard = new JLabel();
 		add(scoreBoard, BorderLayout.NORTH);
