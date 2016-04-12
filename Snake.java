@@ -68,24 +68,9 @@ public class Snake extends JFrame {
         addKeyListener(new DirectionListener());
         setFocusable(true);
 
-        // fieldIcon = new ImageIcon("field.gif");
-        BufferedImage img = new BufferedImage(iconSize, iconSize, BufferedImage.TYPE_INT_RGB);
-        Graphics2D g = img.createGraphics();
-        g.setPaint(Color.WHITE);
-        g.fillRect(0,0,iconSize,iconSize);
-        fieldIcon = new ImageIcon(img);
-
-        img = new BufferedImage(iconSize, iconSize, BufferedImage.TYPE_INT_RGB);
-        g = img.createGraphics();
-        g.setPaint(Color.BLACK);
-        g.fillRect(0,0,iconSize,iconSize);
-        snakeIcon = new ImageIcon(img);
-
-        img = new BufferedImage(iconSize, iconSize, BufferedImage.TYPE_INT_RGB);
-        g = img.createGraphics();
-        g.setPaint(Color.RED);
-        g.fillRect(0,0,iconSize,iconSize);
-        foodIcon = new ImageIcon(img);
+        fieldIcon = createIcon(Color.WHITE);
+        snakeIcon = createIcon(Color.BLACK);
+        foodIcon = createIcon(Color.RED);
 
         rng = new Random();
         scoreBoard = new JLabel();
@@ -93,6 +78,14 @@ public class Snake extends JFrame {
         timer = new Timer(delay, gameLoop);
 
         setup();
+    }
+
+    private ImageIcon createIcon(Color color) {
+        BufferedImage img = new BufferedImage(iconSize, iconSize, BufferedImage.TYPE_INT_RGB);
+        Graphics2D g = img.createGraphics();
+        g.setPaint(color);
+        g.fillRect(0,0,iconSize,iconSize);
+        return new ImageIcon(img);
     }
 
     private void setup() {
