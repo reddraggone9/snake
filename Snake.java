@@ -26,6 +26,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.Timer;
 
+@SuppressWarnings("serial")
 public class Snake extends JFrame {
     public enum Direction {
         UP, DOWN, LEFT, RIGHT
@@ -226,6 +227,7 @@ public class Snake extends JFrame {
     };
 
     private class DirectionListener implements KeyListener {
+        @SuppressWarnings("fallthrough")
         public void keyPressed(KeyEvent e) {
             boolean skip = false;
             switch (e.getKeyCode()) {
@@ -255,6 +257,7 @@ public class Snake extends JFrame {
                 break;
             case KeyEvent.VK_R:
                 setup();
+                // Intentional fallthrough
             case KeyEvent.VK_P:
                 timer.stop();
                 skip = true;
